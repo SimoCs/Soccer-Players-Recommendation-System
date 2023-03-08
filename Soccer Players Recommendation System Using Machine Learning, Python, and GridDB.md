@@ -165,7 +165,7 @@ sns.heatmap(corr, mask=mask)
 
 The graph we came up with in this section is a heatmap that takes the **X** and **Y** axes' attributes and measures correlation in a predetermined scale. The following is our heatmap:
 
-
+![image](https://user-images.githubusercontent.com/32298957/223616172-9e6efbe0-1e60-4e02-a65d-c8f8bce6ff61.png)
 
 ## **Recommendation System** 
 
