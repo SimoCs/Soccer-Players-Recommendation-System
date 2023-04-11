@@ -1,6 +1,6 @@
 # **Soccer Players Recommendation System Using Machine Learning, Python, and GridDB**
 
-The soccer business is a multi-billion dollar industry combining high-performing athletes, passionate fans, and big sponsorship deals. Team owners and managers around the globe are always looking for an edge to find the best talent that can add to the winning soccer o their team. Using machine learning to help team managers find a balanced, talented team is a perfect combination of technology and data to add value to a business.
+The soccer business is a multi-billion dollar industry combining high-performing athletes, passionate fans, and big sponsorship deals. Team owners and managers around the globe are always looking for an edge to find the best talent that can add to the winning soccer to their team. Using machine learning to help team managers find a balanced, talented team is a perfect combination of technology and data to add value to a business.
 This article will cover recommendation system models to help managers find talent and upcoming players based on their performance and soccer league data. The objective is to use the recommendation system as a monitoring and prospecting tool to find innovative, high-performing soccer players. In this article, we propose a recommendation system model to recommend soccer players given their soccer matches data using Python and GridDB.
 
 ## **Setting up your environment**
@@ -47,7 +47,7 @@ The following is the list of the features that are found in our dataset:
 
 The dataset was extracted from the [English Premier League Players Dataset](https://www.kaggle.com/datasets/mauryashubham/english-premier-league-players-dataset). The table below is the first **three** rows of this dataset:
 
-![image](https://user-images.githubusercontent.com/32298957/226069270-06c3e9de-cc3c-47d9-894d-6536c93a0690.png)
+![image-20230304035905725](C:\Users\vip phone\AppData\Roaming\Typora\typora-user-images\image-20230304035905725.png)
 
 ## **Importing the necessary libraries** 
 
@@ -87,25 +87,60 @@ The code described in this section can be written as follows:
 ```python
 import jaydebeapi
 
+def create_players_table(curs):
+    curs.execute("""
+    CREATE TABLE IF NOT EXISTS players (
+        name VARCHAR(255),
+        club VARCHAR(255),
+        age INTEGER,
+        position VARCHAR(255),
+        position_cat INTEGER,
+        market_value DOUBLE,
+        page_views INTEGER,
+        fpl_value DOUBLE,
+        fpl_sel VARCHAR(255),
+        fpl_points INTEGER,
+        region INTEGER,
+        nationality VARCHAR(255),
+        new_foreign BOOLEAN,
+        age_cat INTEGER,
+        club_id INTEGER,
+        big_club BOOLEAN,
+        new_signing BOOLEAN
+    )
+    """)
+
+def load_data_to_griddb(conn, data_file='data.csv'):
+    data = pd.read_csv(data_file)
+    
+    for index, row in data.iterrows():
+        values = tuple(row.values)
+        curs.execute("INSERT INTO players (name, club, age, position, position_cat, market_value, "
+                     "page_views, fpl_value, fpl_sel, fpl_points, region, nationality, new_foreign, "
+                     "age_cat, club_id, big_club, new_signing) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", values)
+
 def query_sensor(curs, table):
-    curs.execute("select count(*) from " + table)
+    curs.execute("select name, club, age, position, position_cat, market_value, "
+                 "page_views, fpl_value, fpl_sel, fpl_points, region, nationality, new_foreign, "
+                 "age_cat, club_id, big_club, new_signing from " + table)
     return curs.fetchall()[0][0]
 
-conn = jaydebeapi.connect("com.toshiba.mwcloud.gs.sql.Driver", 
-                          "jdbc:gs://239.0.0.1:41999/defaultCluster", 
-                          ["admin", "admin"], 
-                          "gridstore-jdbc-4.6.0.jar")
+url = "jdbc:gs://" + "239.0.0.1" + ":" + "41999" + "/" + "defaultCluster"
+conn = jaydebeapi.connect("com.toshiba.mwcloud.gs.sql.Driver",
+    url,  ["admin", "admin"], "./gridstore-jdbc.jar")
 
 curs = conn.cursor()
-curs.execute("select * from \"#tables\"")
+create_players_table(curs) 
+load_data_to_griddb(conn)
+curs.execute("select table_name from \"#tables\"")
 tables = []
 data = []
 
 for table in curs.fetchall():
     try:
-        if table[1].split("_")[1].startswith("M"):
-            tables.append(table[1])
-            data.append(query_sensor(curs, table[1]))
+        if table[0] == "players":
+            tables.append(table[0])
+            data.append(query_sensor(curs, table[0]))
     except:
         pass
 ```
