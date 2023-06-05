@@ -47,7 +47,7 @@ The following is the list of the features that are found in our dataset:
 
 The dataset was extracted from the [English Premier League Players Dataset](https://www.kaggle.com/datasets/mauryashubham/english-premier-league-players-dataset). The table below is the first **three** rows of this dataset:
 
-![image-20230304035905725](C:\Users\vip phone\AppData\Roaming\Typora\typora-user-images\image-20230304035905725.png)
+![image](https://user-images.githubusercontent.com/32298957/231042066-6a0f2e1f-eb16-4e21-a667-dbf6c0469e78.png)
 
 ## **Importing the necessary libraries** 
 
