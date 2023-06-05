@@ -100,13 +100,13 @@ def create_players_table(curs):
         fpl_value DOUBLE,
         fpl_sel VARCHAR(255),
         fpl_points INTEGER,
-        region INTEGER,
+        region DOUBLE,
         nationality VARCHAR(255),
-        new_foreign BOOLEAN,
+        new_foreign INTEGER,
         age_cat INTEGER,
         club_id INTEGER,
-        big_club BOOLEAN,
-        new_signing BOOLEAN
+        big_club INTEGER,
+        new_signing INTEGER
     )
     """)
 
