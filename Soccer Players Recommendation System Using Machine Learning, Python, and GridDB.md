@@ -47,7 +47,7 @@ The following is the list of the features that are found in our dataset:
 
 The dataset was extracted from the [English Premier League Players Dataset](https://www.kaggle.com/datasets/mauryashubham/english-premier-league-players-dataset). The table below is the first **three** rows of this dataset:
 
-
+![image](https://github.com/SimoCs/Soccer-Players-Recommendation-System/assets/32298957/68333831-8e5a-4589-afc3-c4d2ea16c733)
 
 ## **Importing the necessary libraries** 
 
@@ -196,7 +196,7 @@ sns.heatmap(corr, mask=mask)
 
 The graph we came up with in this section is a heatmap that takes the **X** and **Y** axes' attributes and measures correlation in a predetermined scale. The following is our heatmap:
 
-![Graph](C:\Users\vip phone\Documents\GitHub\Soccer-Players-Recommendation-System\Graph.png)
+![image](https://github.com/SimoCs/Soccer-Players-Recommendation-System/assets/32298957/c863ddd6-7b06-47cd-b238-edd48aa10dcb)
 
 ## **Recommendation System** 
 
