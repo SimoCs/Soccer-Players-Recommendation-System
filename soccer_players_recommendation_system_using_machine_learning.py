@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Soccer_Players_Recommendation_System_Using_Machine_Learning.ipynb
-"""
+"""Soccer_Players_Recommendation_System_Using_Machine_Learning.ipynb"""
 
 !pip install JayDeBeApi
 
@@ -18,48 +17,44 @@ from sklearn.decomposition import PCA
 
 """## Loading Data"""
 
-df = pd.read_csv('data.csv')
+data = pd.read_csv('data.csv')
 
-df.head()
+data.head()
 
-df.shape
+data.shape
 
-df.isnull().sum()
+data.isnull().sum()
 
-df.columns
+data.columns
 
-df = df.dropna()
+data = data.dropna()
 
-df.isnull().sum().sum()
+data.isnull().sum().sum()
 
-df.dtypes
+data.dtypes
 
 def create_players_table(curs):
-    curs.execute("""
-    CREATE TABLE IF NOT EXISTS players (
-        name VARCHAR(255),
-        club VARCHAR(255),
-        age INTEGER,
-        position VARCHAR(255),
-        position_cat INTEGER,
-        market_value DOUBLE,
-        page_views INTEGER,
-        fpl_value DOUBLE,
-        fpl_sel VARCHAR(255),
-        fpl_points INTEGER,
-        region DOUBLE,
-        nationality VARCHAR(255),
-        new_foreign INTEGER,
-        age_cat INTEGER,
-        club_id INTEGER,
-        big_club INTEGER,
-        new_signing INTEGER
-    )
-    """)
+    curs.execute(""" CREATE TABLE IF NOT EXISTS players (
+                      name VARCHAR(255),
+                      club VARCHAR(255),
+                      age INTEGER,
+                      position VARCHAR(255),
+                      position_cat INTEGER,
+                      market_value DOUBLE,
+                      page_views INTEGER,
+                      fpl_value DOUBLE,
+                      fpl_sel VARCHAR(255),
+                      fpl_points INTEGER,
+                      region DOUBLE,
+                      nationality VARCHAR(255),
+                      new_foreign INTEGER,
+                      age_cat INTEGER,
+                      club_id INTEGER,
+                      big_club INTEGER,
+                      new_signing INTEGER ) """)
 
-def load_data_to_griddb(conn, data_frame = df):
-    data = df
-    
+def load_data_to_griddb(conn, data_file='data.csv'):
+    data = pd.read_csv(data_file)
     for index, row in data.iterrows():
         values = tuple(row.values)
         curs.execute("INSERT INTO players (name, club, age, position, position_cat, market_value, "

@@ -47,7 +47,7 @@ The following is the list of the features that are found in our dataset:
 
 The dataset was extracted from the [English Premier League Players Dataset](https://www.kaggle.com/datasets/mauryashubham/english-premier-league-players-dataset). The table below is the first **three** rows of this dataset:
 
-![image](https://user-images.githubusercontent.com/32298957/231042066-6a0f2e1f-eb16-4e21-a667-dbf6c0469e78.png)
+
 
 ## **Importing the necessary libraries** 
 
@@ -88,31 +88,27 @@ The code described in this section can be written as follows:
 import jaydebeapi
 
 def create_players_table(curs):
-    curs.execute("""
-    CREATE TABLE IF NOT EXISTS players (
-        name VARCHAR(255),
-        club VARCHAR(255),
-        age INTEGER,
-        position VARCHAR(255),
-        position_cat INTEGER,
-        market_value DOUBLE,
-        page_views INTEGER,
-        fpl_value DOUBLE,
-        fpl_sel VARCHAR(255),
-        fpl_points INTEGER,
-        region DOUBLE,
-        nationality VARCHAR(255),
-        new_foreign INTEGER,
-        age_cat INTEGER,
-        club_id INTEGER,
-        big_club INTEGER,
-        new_signing INTEGER
-    )
-    """)
+    curs.execute(""" CREATE TABLE IF NOT EXISTS players (
+                      name VARCHAR(255),
+                      club VARCHAR(255),
+                      age INTEGER,
+                      position VARCHAR(255),
+                      position_cat INTEGER,
+                      market_value DOUBLE,
+                      page_views INTEGER,
+                      fpl_value DOUBLE,
+                      fpl_sel VARCHAR(255),
+                      fpl_points INTEGER,
+                      region DOUBLE,
+                      nationality VARCHAR(255),
+                      new_foreign INTEGER,
+                      age_cat INTEGER,
+                      club_id INTEGER,
+                      big_club INTEGER,
+                      new_signing INTEGER ) """)
 
 def load_data_to_griddb(conn, data_file='data.csv'):
     data = pd.read_csv(data_file)
-    
     for index, row in data.iterrows():
         values = tuple(row.values)
         curs.execute("INSERT INTO players (name, club, age, position, position_cat, market_value, "
@@ -185,7 +181,7 @@ This is achieved with the following code:
 data = data.dropna()
 ```
 
-Now we have replaced all missing values; we can move to visualize our data. The first step to graph our data is to compute the correlation matrix representing the different attributes that can be used to predict others using the `corr()` method. This is very useful as it shows what data points can be used to recommend a player and how every player is measured in terms of the attributes presented in our dataset.
+Now we have replaced all missing values, we can move to visualize our data. The first step to graph our data is to compute the correlation matrix representing the different attributes that can be used to predict others using the `corr()` method. This is very useful as it shows what data points can be used to recommend a player and how every player is measured in terms of the attributes presented in our dataset.
 
 This is achieved with the following code:
 
