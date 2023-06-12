@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """Soccer_Players_Recommendation_System_Using_Machine_Learning.ipynb"""
 
-!pip install JayDeBeApi
+!pip install JayDeBeApi JPype1==0.6.3
+
+!wget https://repo1.maven.org/maven2/com/github/griddb/gridstore-jdbc/4.6.0/gridstore-jdbc-4.6.0.jar
 
 import numpy as np
 import pandas as pd
@@ -19,7 +21,7 @@ from sklearn.decomposition import PCA
 
 data = pd.read_csv('data.csv')
 
-data.head()
+data.head(3)
 
 data.shape
 
@@ -67,9 +69,8 @@ def query_sensor(curs, table):
                  "age_cat, club_id, big_club, new_signing from " + table)
     return curs.fetchall()[0][0]
 
-url = "jdbc:gs://" + "239.0.0.1" + ":" + "41999" + "/" + "defaultCluster"
-conn = jaydebeapi.connect("com.toshiba.mwcloud.gs.sql.Driver",
-    url,  ["admin", "admin"], "./gridstore-jdbc.jar")
+conn = jaydebeapi.connect("com.toshiba.mwcloud.gs.sql.Driver", "jdbc:gs://239.0.0.1:41999/defaultCluster", ["admin", "admin"],
+                          "gridstore-jdbc-4.6.0.jar")
 
 curs = conn.cursor()
 create_players_table(curs) 
