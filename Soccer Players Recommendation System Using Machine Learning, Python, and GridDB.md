@@ -15,7 +15,7 @@ To implement the recommendation system described in this article, we begin by co
 
 If you need to install any missing packages, you can do so through the command line by typing the following:
 
-```
+```bash
 pip install package-name
 ```
 
@@ -89,7 +89,7 @@ In this article, we will be using multiple Python modules that we will import ac
 
 - Python library used to connect to a GridDB cluster:
 
-  ```
+  ```python
   import griddb_python as griddb
   ```
 
