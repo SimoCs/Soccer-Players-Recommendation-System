@@ -1,14 +1,21 @@
 # -*- coding: utf-8 -*-
-"""Soccer_Players_Recommendation_System_Using_Machine_Learning.ipynb"""
+"""Soccer_Players_Recommendation_System_Using_Machine_Learning
 
-!pip install JayDeBeApi JPype1==0.6.3
+## GridDB Installation
+"""
 
-!wget https://repo1.maven.org/maven2/com/github/griddb/gridstore-jdbc/4.6.0/gridstore-jdbc-4.6.0.jar
+!wget https://github.com/griddb/c_client/releases/download/v5.3.0/griddb-c-client_5.3.0_amd64.deb
+
+!dpkg -i griddb-c-client_5.3.0_amd64.deb
+
+!pip install swig
+
+!pip install griddb-python
+
+"""## Import Libraries"""
 
 import numpy as np
 import pandas as pd
-
-import jaydebeapi
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -16,6 +23,8 @@ import seaborn as sns
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import NearestNeighbors
 from sklearn.decomposition import PCA
+
+import griddb_python as griddb
 
 """## Loading Data"""
 
@@ -35,57 +44,79 @@ data.isnull().sum().sum()
 
 data.dtypes
 
-def create_players_table(curs):
-    curs.execute(""" CREATE TABLE IF NOT EXISTS players (
-                      name VARCHAR(255),
-                      club VARCHAR(255),
-                      age INTEGER,
-                      position VARCHAR(255),
-                      position_cat INTEGER,
-                      market_value DOUBLE,
-                      page_views INTEGER,
-                      fpl_value DOUBLE,
-                      fpl_sel VARCHAR(255),
-                      fpl_points INTEGER,
-                      region DOUBLE,
-                      nationality VARCHAR(255),
-                      new_foreign INTEGER,
-                      age_cat INTEGER,
-                      club_id INTEGER,
-                      big_club INTEGER,
-                      new_signing INTEGER ) """)
+data.tail()
 
-def load_data_to_griddb(conn, data_file='data.csv'):
-    data = pd.read_csv(data_file)
-    for index, row in data.iterrows():
-        values = tuple(row.values)
-        curs.execute("INSERT INTO players (name, club, age, position, position_cat, market_value, "
-                     "page_views, fpl_value, fpl_sel, fpl_points, region, nationality, new_foreign, "
-                     "age_cat, club_id, big_club, new_signing) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", values)
+"""## Setting Up a Container in Griddb to Store the Data"""
 
-def query_sensor(curs, table):
-    curs.execute("select name, club, age, position, position_cat, market_value, "
-                 "page_views, fpl_value, fpl_sel, fpl_points, region, nationality, new_foreign, "
-                 "age_cat, club_id, big_club, new_signing from " + table)
-    return curs.fetchall()[0][0]
+def griddb_CRUD():
+    factory = griddb.StoreFactory.get_instance()
 
-conn = jaydebeapi.connect("com.toshiba.mwcloud.gs.sql.Driver", "jdbc:gs://239.0.0.1:41999/defaultCluster", ["admin", "admin"],
-                          "gridstore-jdbc-4.6.0.jar")
+    # Provide the necessary arguments
+    gridstore = factory.get_store(
+        host = '127.0.0.1',
+        port = 10001,
+        cluster_name = 'defaultCluster',
+        username = 'admin',
+        password = 'admin'
+    )
 
-curs = conn.cursor()
-create_players_table(curs) 
-load_data_to_griddb(conn)
-curs.execute("select table_name from \"#tables\"")
-tables = []
-data = []
+    # Define the container info
+    conInfo = griddb.ContainerInfo(
+        "football_players",
+        [
+            ["name", griddb.Type.STRING],
+            ["club", griddb.Type.STRING],
+            ["age", griddb.Type.INTEGER],
+            ["position", griddb.Type.STRING],
+            ["position_cat", griddb.Type.INTEGER],
+            ["market_value", griddb.Type.DOUBLE],
+            ["page_views", griddb.Type.INTEGER],
+            ["fpl_value", griddb.Type.DOUBLE],
+            ["fpl_sel", griddb.Type.STRING],
+            ["fpl_points", griddb.Type.INTEGER],
+            ["region", griddb.Type.INTEGER],
+            ["nationality", griddb.Type.STRING],
+            ["new_foreign", griddb.Type.INTEGER],
+            ["age_cat", griddb.Type.INTEGER],
+            ["club_id", griddb.Type.INTEGER],
+            ["big_club", griddb.Type.INTEGER],
+            ["new_signing", griddb.Type.INTEGER]
+        ],
+        griddb.ContainerType.COLLECTION, True
+    )
 
-for table in curs.fetchall():
-    try:
-        if table[0] == "players":
-            tables.append(table[0])
-            data.append(query_sensor(curs, table[0]))
-    except:
-        pass
+    # Drop container if it exists
+    gridstore.drop_container(conInfo.name)
+
+    # Create a container
+    container = gridstore.put_container(conInfo)
+
+    # Load the data
+    data = pd.read_csv('data.csv')
+
+    # Put rows
+    for i in range(len(data)):
+        row = data.iloc[i].tolist()
+        container.put(row)
+
+    # Get rows
+    columns = ', '.join(data.columns)
+    query = container.query(f"SELECT {columns}")
+    rs = query.fetch(False)
+
+    data_list = []
+    while rs.has_next():
+        data = rs.next()
+        data_list.append(data)
+
+    # Convert the list to a DataFrame
+    df = pd.DataFrame(data_list, columns=data.columns)
+
+    return df
+
+data = griddb_CRUD()
+
+"""## Recommendation System"""
 
 sample = data.select_dtypes(include='number')
 corr = sample.corr()
@@ -108,8 +139,8 @@ def recommendation_system(player):
     index =  find_index(player)
     for i in player_index[index][1:]:
         print("Player Name: {}\nPlayer Market Value: €{}\nPlayer Age: {}\nPlayer Current Club: {}\n".format(data.iloc[i]['name'],
-                                                                                        data.iloc[i]['market_value'], 
-                                                                                        data.iloc[i]['age'], 
+                                                                                        data.iloc[i]['market_value'],
+                                                                                        data.iloc[i]['age'],
                                                                                         data.iloc[i]['club']))
 
 recommendation_system('Petr Cech')

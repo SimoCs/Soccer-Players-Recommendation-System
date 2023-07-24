@@ -11,12 +11,24 @@ To implement the recommendation system described in this article, we begin by co
 - **GridDB:**  [GridDB](https://docs.griddb.net/latest/gettingstarted/python/#installation) is our database that stores the data used in the recommendation system model.
 - **Python 3.11.2:** The latest version of [Python 3.11.2](https://www.python.org/downloads/) is used in our solution.
 - **Jupyter Notebook:** [Jupyter Notebook](https://jupyter.org/install) is an integrated development environment (IDE) to run our Python code.
-- **Visual Studio 2022 version 17.5:** [Visual Studio 2022](https://visualstudio.microsoft.com/vs/) will run our GridDB database commands using JPype1 on Jupyter Notebook.
+- **Visual Studio 2022 version 17.5:** [Visual Studio 2022](https://visualstudio.microsoft.com/vs/) will run our GridDB database commands.
 
-Finally, we must install any missing libraries utilized in Jupyter Notebook. We are missing [JayDeBeApi](https://pypi.org/project/JayDeBeApi/) in our situation. Here's how we use the pip command to install the missing library in the Jupyter terminal:
+If you need to install any missing packages, you can do so through the command line by typing the following:
+
+```
+pip install package-name
+```
+
+In addition, if you are utilizing GridDB, you will need to acquire these extra libraries:
+
+1. [GridDB C-client](https://github.com/griddb/c_client)
+2. SWIG (Simplified Wrapper and Interface Generator)
+3. [GridDB Python Client](https://github.com/griddb/python_client)
+
+Finally, we are missing [GridDB Python Client Library](https://pypi.org/project/griddb-python/) in our situation. Here's how we use the pip command to install the missing library in the Jupyter terminal:
 
 ```bash
-pip install JayDeBeApi
+pip install griddb-python
 ```
 
 We may now explore our dataset after successfully installing and configuring our environment.
@@ -75,70 +87,86 @@ In this article, we will be using multiple Python modules that we will import ac
   from sklearn.decomposition import PCA
   ```
 
+- Python library used to connect to a GridDB cluster:
+
+  ```
+  import griddb_python as griddb
+  ```
 
 After successfully importing the required libraries, we begin with reading our **English Premier League Players Dataset**.
 
 ## **Loading the Dataset** 
 
-GridDB plays a significant role in creating our recommendation system as it is the data storage mechanism we will use to store our dataset. To successfully store the data, we will first load the GridDB container. This can be done using the `jaydebeapi` library we installed earlier. Next, we will use the **GridDB JDBC** connector to insert the data using a loop. Once done, we must load the data back into a data frame to continue creating our recommendation system.
+GridDB plays a significant role in creating our recommendation system as it is the data storage mechanism we will use to store our dataset. To successfully store the data, we will first load the GridDB container. This can be done using the `griddb_python` library we installed earlier. Next, we will use **container.put** to insert the data using a loop. Once done, we must load the data back into a data frame to continue creating our recommendation system.
 
 The code described in this section can be written as follows:
 
 ```python
-import jaydebeapi
+def griddb_CRUD():
+    factory = griddb.StoreFactory.get_instance()
 
-def create_players_table(curs):
-    curs.execute(""" CREATE TABLE IF NOT EXISTS players (
-                      name VARCHAR(255),
-                      club VARCHAR(255),
-                      age INTEGER,
-                      position VARCHAR(255),
-                      position_cat INTEGER,
-                      market_value DOUBLE,
-                      page_views INTEGER,
-                      fpl_value DOUBLE,
-                      fpl_sel VARCHAR(255),
-                      fpl_points INTEGER,
-                      region DOUBLE,
-                      nationality VARCHAR(255),
-                      new_foreign INTEGER,
-                      age_cat INTEGER,
-                      club_id INTEGER,
-                      big_club INTEGER,
-                      new_signing INTEGER ) """)
+    # Provide the necessary arguments
+    gridstore = factory.get_store(
+        host = '127.0.0.1',
+        port = 10001,
+        cluster_name = 'defaultCluster',
+        username = 'admin',
+        password = 'admin'
+    )
 
-def load_data_to_griddb(conn, data_file='data.csv'):
-    data = pd.read_csv(data_file)
-    for index, row in data.iterrows():
-        values = tuple(row.values)
-        curs.execute("INSERT INTO players (name, club, age, position, position_cat, market_value, "
-                     "page_views, fpl_value, fpl_sel, fpl_points, region, nationality, new_foreign, "
-                     "age_cat, club_id, big_club, new_signing) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", values)
+    # Define the container info
+    conInfo = griddb.ContainerInfo(
+        "football_players",
+        [
+            ["name", griddb.Type.STRING], 
+            ["club", griddb.Type.STRING], 
+            ["age", griddb.Type.INTEGER], 
+            ["position", griddb.Type.STRING],
+            ["position_cat", griddb.Type.INTEGER],
+            ["market_value", griddb.Type.DOUBLE],
+            ["page_views", griddb.Type.INTEGER],
+            ["fpl_value", griddb.Type.DOUBLE],
+            ["fpl_sel", griddb.Type.STRING],
+            ["fpl_points", griddb.Type.INTEGER],
+            ["region", griddb.Type.INTEGER],
+            ["nationality", griddb.Type.STRING],
+            ["new_foreign", griddb.Type.INTEGER],
+            ["age_cat", griddb.Type.INTEGER],
+            ["club_id", griddb.Type.INTEGER],
+            ["big_club", griddb.Type.INTEGER],
+            ["new_signing", griddb.Type.INTEGER]
+        ],
+        griddb.ContainerType.COLLECTION, True
+    )
 
-def query_sensor(curs, table):
-    curs.execute("select name, club, age, position, position_cat, market_value, "
-                 "page_views, fpl_value, fpl_sel, fpl_points, region, nationality, new_foreign, "
-                 "age_cat, club_id, big_club, new_signing from " + table)
-    return curs.fetchall()[0][0]
+    # Drop container if it exists
+    gridstore.drop_container(conInfo.name)
 
-url = "jdbc:gs://" + "239.0.0.1" + ":" + "41999" + "/" + "defaultCluster"
-conn = jaydebeapi.connect("com.toshiba.mwcloud.gs.sql.Driver",
-    url,  ["admin", "admin"], "./gridstore-jdbc.jar")
+    # Create a container
+    container = gridstore.put_container(conInfo)
 
-curs = conn.cursor()
-create_players_table(curs) 
-load_data_to_griddb(conn)
-curs.execute("select table_name from \"#tables\"")
-tables = []
-data = []
+    # Load the data
+    data = pd.read_csv('data.csv')
 
-for table in curs.fetchall():
-    try:
-        if table[0] == "players":
-            tables.append(table[0])
-            data.append(query_sensor(curs, table[0]))
-    except:
-        pass
+    # Put rows
+    for i in range(len(data)):
+        row = data.iloc[i].tolist()
+        container.put(row)
+
+    # Get rows
+    columns = ', '.join(data.columns)
+    query = container.query(f"SELECT {columns}")
+    rs = query.fetch(False)
+
+    data_list = []
+    while rs.has_next():
+        data = rs.next()
+        data_list.append(data)
+
+    # Convert the list to a DataFrame
+    df = pd.DataFrame(data_list, columns=data.columns)
+
+    return df
 ```
 
 ## **Exploratory Data Analysis** 
@@ -181,7 +209,7 @@ This is achieved with the following code:
 data = data.dropna()
 ```
 
-Now we have replaced all missing values, we can move to visualize our data. The first step to graph our data is to compute the correlation matrix representing the different attributes that can be used to predict others using the `corr()` method. This is very useful as it shows what data points can be used to recommend a player and how every player is measured in terms of the attributes presented in our dataset.
+Now that we have replaced all missing values, we can move to visualize our data. The first step to graph our data is to compute the correlation matrix representing the different attributes that can be used to predict others using the `corr()` method. This is very useful as it shows what data points can be used to recommend a player and how every player is measured in terms of the attributes presented in our dataset.
 
 This is achieved with the following code:
 
@@ -200,7 +228,7 @@ The graph we came up with in this section is a heatmap that takes the **X** and 
 
 ## **Recommendation System** 
 
-In this section, we design and prepare our recommendation system model. For this purpose, we begin by converting our data points to numerical values using a standard scaler. Next, we run the Nearest Neighbors model that will be used as our recommendation system algorithm. The model will take as input our numerical data and will be used to find comparable players that are close in characteristics to our input. 
+In this section, we design and prepare our recommendation system model. For this purpose, we begin by converting our data points to numerical values using a standard scaler. Next, we run the Nearest Neighbors model that will be used as our recommendation system algorithm. The model will take as input our numerical data and will be used to find comparable players that are close in characteristics to our input.
 
 This is achieved with the following code:
 
