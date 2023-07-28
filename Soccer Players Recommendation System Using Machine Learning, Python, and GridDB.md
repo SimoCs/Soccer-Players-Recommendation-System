@@ -102,71 +102,78 @@ GridDB plays a significant role in creating our recommendation system as it is t
 The code described in this section can be written as follows:
 
 ```python
-def griddb_CRUD():
-    factory = griddb.StoreFactory.get_instance()
+factory = griddb.StoreFactory.get_instance()
 
-    # Provide the necessary arguments
-    gridstore = factory.get_store(
-        host = '127.0.0.1',
-        port = 10001,
-        cluster_name = 'defaultCluster',
-        username = 'admin',
-        password = 'admin'
-    )
+# Provide the necessary arguments
+gridstore = factory.get_store(
+    host = '239.0.0.1',
+    port = 31999,
+    cluster_name = 'defaultCluster',
+    username = 'admin',
+    password = 'admin'
+)
 
-    # Define the container info
-    conInfo = griddb.ContainerInfo(
-        "football_players",
-        [
-            ["name", griddb.Type.STRING], 
-            ["club", griddb.Type.STRING], 
-            ["age", griddb.Type.INTEGER], 
-            ["position", griddb.Type.STRING],
-            ["position_cat", griddb.Type.INTEGER],
-            ["market_value", griddb.Type.DOUBLE],
-            ["page_views", griddb.Type.INTEGER],
-            ["fpl_value", griddb.Type.DOUBLE],
-            ["fpl_sel", griddb.Type.STRING],
-            ["fpl_points", griddb.Type.INTEGER],
-            ["region", griddb.Type.INTEGER],
-            ["nationality", griddb.Type.STRING],
-            ["new_foreign", griddb.Type.INTEGER],
-            ["age_cat", griddb.Type.INTEGER],
-            ["club_id", griddb.Type.INTEGER],
-            ["big_club", griddb.Type.INTEGER],
-            ["new_signing", griddb.Type.INTEGER]
-        ],
-        griddb.ContainerType.COLLECTION, True
-    )
+# Define the container info
+conInfo = griddb.ContainerInfo(
+    "football_players",
+    [
+        ["name", griddb.Type.STRING],
+        ["club", griddb.Type.STRING],
+        ["age", griddb.Type.DOUBLE],
+        ["position", griddb.Type.STRING],
+        ["position_cat", griddb.Type.DOUBLE],
+        ["market_value", griddb.Type.DOUBLE],
+        ["page_views", griddb.Type.DOUBLE],
+        ["fpl_value", griddb.Type.DOUBLE],
+        ["fpl_sel", griddb.Type.STRING],
+        ["fpl_points", griddb.Type.DOUBLE],
+        ["region", griddb.Type.DOUBLE],
+        ["nationality", griddb.Type.STRING],
+        ["new_foreign", griddb.Type.DOUBLE],
+        ["age_cat", griddb.Type.DOUBLE],
+        ["club_id", griddb.Type.DOUBLE],
+        ["big_club", griddb.Type.DOUBLE],
+        ["new_signing", griddb.Type.DOUBLE]
+    ],
+    griddb.ContainerType.COLLECTION, True
+)
 
-    # Drop container if it exists
-    gridstore.drop_container(conInfo.name)
+# Drop container if it exists
+gridstore.drop_container(conInfo.name)
 
-    # Create a container
-    container = gridstore.put_container(conInfo)
+# Create a container
+container = gridstore.put_container(conInfo)
 
-    # Load the data
-    data = pd.read_csv('data.csv')
+# Load the data
 
-    # Put rows
-    for i in range(len(data)):
-        row = data.iloc[i].tolist()
-        container.put(row)
+# Put rows
+for i in range(len(data)):
+  row = data.iloc[i].tolist()
+  try:
+    container.put(row)
+  except Exception as e:
+    print(f"Error on row {i}: {row}")
+    print(e)
 
-    # Get rows
-    columns = ', '.join(data.columns)
-    query = container.query(f"SELECT {columns}")
-    rs = query.fetch(False)
+cont = gridstore.get_container("football_players")
 
-    data_list = []
-    while rs.has_next():
-        data = rs.next()
-        data_list.append(data)
+if cont is None:
+  print("Does not exist")
 
-    # Convert the list to a DataFrame
-    df = pd.DataFrame(data_list, columns=data.columns)
+print("connection successful")
 
-    return df
+# Define the exact columns you need
+columns = ["*"]
+
+select_statement = "SELECT " + ", ".join(columns) + " FROM football_players"
+
+# Execute the query
+query = container.query(select_statement)
+rs = query.fetch(False)
+
+data = rs.fetch_rows()
+
+print(data.head())
 ```
 
 ## **Exploratory Data Analysis** 
