@@ -112,12 +112,6 @@ print(data.head())
 """## Recommendation System"""
 
 sample = data.select_dtypes(include='number')
-corr = sample.corr()
-mask = np.zeros_like(corr, dtype = np.bool_)
-mask[np.triu_indices_from(mask)] = True
-plt.figure(figsize=(10,10))
-sns.heatmap(corr, mask=mask)
-
 scaled = StandardScaler()
 X = scaled.fit_transform(sample)
 recommendations = NearestNeighbors(n_neighbors = 5, algorithm='kd_tree')
